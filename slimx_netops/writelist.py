@@ -59,6 +59,9 @@ class ChangeType:
     _build_rollback: Callable[[dict, str], tuple[list[str], bool]]
     _build_rollback_request: Callable[[dict, str], dict | None]
     _validate_specs: Callable[[dict], list[dict]]
+    # Given the params and the concatenated text of the validate read-backs, is the SPECIFIC
+    # intended change reflected? (Richer than "state changed" — confirms the exact value took.)
+    _check_reflected: Callable[[dict, str], bool]
 
 
 # --- change type: IPsec Phase-2 (IPsec SA) lifetime -------------------------------------------
@@ -133,6 +136,12 @@ CHANGE_TYPES: dict[str, ChangeType] = {
             # only rebuilds with it at the next rekey). Validation confirms the new value is present.
             {"tool": "ssh_show", "command": "show running-config | section crypto ipsec"}
         ],
+        # Reflected iff the exact intended lifetime value is present in the read-back config.
+        _check_reflected=lambda params, reads: bool(
+            re.search(
+                rf"security-association\s+lifetime\s+seconds\s+{int(params['seconds'])}\b", reads
+            )
+        ),
     ),
 }
 
@@ -151,6 +160,13 @@ def validate_change_request(change_type: str, params: dict) -> ChangeType:
         )
     ct._validate_params(params or {})
     return ct
+
+
+def check_reflected(change_type: str, params: dict, reads: str) -> bool:
+    """Is the specific intended change reflected in the validate read-backs? Confirms the exact
+    value took, not merely that some state changed."""
+    ct = validate_change_request(change_type, params)
+    return ct._check_reflected(params, reads or "")
 
 
 def plan_change(change_type: str, params: dict, before: str) -> ChangePlan:

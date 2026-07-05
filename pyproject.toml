@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "slimx-netops"
-version = "0.4.0"
+version = "0.4.1"
 description = "SlimX-NetOps: a bounded, READ-ONLY network telemetry bridge for the SlimX platform. Exposes ssh_show/snmp_get/prometheus_query/alertmanager_alerts/logs_query as MCP-over-HTTP tools behind a command/OID allowlist."
 readme = "README.md"
 requires-python = ">=3.12"

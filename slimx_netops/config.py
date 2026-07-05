@@ -51,6 +51,7 @@ class Settings:
     http_timeout_seconds: int
     logs_max_lines: int
     enable_write: bool
+    fixture_simulate_writes: bool
 
     @property
     def is_live(self) -> bool:
@@ -80,4 +81,8 @@ def get_settings() -> Settings:
         # and refuses to run: the bridge is read-only. Turn on ONLY on a box authorized to change
         # devices, after the writelist security review.
         enable_write=_env_bool("NETOPS_ENABLE_WRITE", False),
+        # Fixture-mode only: whether a simulated apply is reflected in later reads (default true).
+        # Set false to simulate a device that ACCEPTS but does not reflect a change — exercises the
+        # post-change validation + Mode-5 auto-rollback path without real gear.
+        fixture_simulate_writes=_env_bool("NETOPS_FIXTURE_SIMULATE_WRITES", True),
     )

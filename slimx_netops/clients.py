@@ -146,15 +146,21 @@ class FixtureSource:
 
     def apply_config(self, device: Device, commands: list[str]) -> RawResult:
         """Simulate applying config lines (fixture mode records a write-state override so subsequent
-        config reads reflect the change; nothing touches a real device)."""
+        config reads reflect the change; nothing touches a real device).
+
+        When ``NETOPS_FIXTURE_SIMULATE_WRITES=false`` the override is NOT recorded — the device
+        "accepts" the change but does not reflect it, so post-change validation fails and Mode-5
+        auto-rollback fires. This is how the rollback path is exercised without real gear."""
+        reflect = get_settings().fixture_simulate_writes
         for line in commands:
             match = _LIFETIME_SET_RE.search(line)
-            if match:
+            if match and reflect:
                 _FIXTURE_WRITE_STATE.setdefault(device.id, {})[
                     "phase2_lifetime_seconds"
                 ] = int(match.group(1))
+        note = "" if reflect else " (not reflected — simulating a device that did not apply it)"
         return RawResult(
-            data=f"(simulated) applied {len(commands)} config line(s) on {device.id}",
+            data=f"(simulated) applied {len(commands)} config line(s) on {device.id}{note}",
             format="text",
             command="configure",
         )

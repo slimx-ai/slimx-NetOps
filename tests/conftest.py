@@ -10,6 +10,7 @@ def _fixture_mode(monkeypatch):
     monkeypatch.delenv("NETOPS_INVENTORY", raising=False)
     monkeypatch.delenv("SLIMX_NETOPS_INTERNAL_TOKEN", raising=False)
     monkeypatch.delenv("NETOPS_ENABLE_WRITE", raising=False)  # writes off by default
+    monkeypatch.delenv("NETOPS_FIXTURE_SIMULATE_WRITES", raising=False)  # reflect writes by default
     _clear_caches()
     yield
     _clear_caches()

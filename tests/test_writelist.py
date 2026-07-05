@@ -7,6 +7,7 @@ import pytest
 from slimx_netops.writelist import (
     LOW_RISK_CHANGE_TYPES,
     WriteNotAllowed,
+    check_reflected,
     plan_change,
     validate_change_request,
 )
@@ -60,3 +61,12 @@ def test_rollback_is_flagged_unknown_when_prior_value_absent():
 
 def test_low_risk_allowlist_exposes_the_reversible_change():
     assert "ipsec_phase2_lifetime" in LOW_RISK_CHANGE_TYPES
+
+
+def test_check_reflected_confirms_the_specific_value():
+    params = {"profile": "S2S-PROFILE", "seconds": 28800}
+    # The exact intended value present -> reflected.
+    assert check_reflected("ipsec_phase2_lifetime", params, "set security-association lifetime seconds 28800") is True
+    # A DIFFERENT value present (change didn't take / partial) -> NOT reflected (richer than "changed").
+    assert check_reflected("ipsec_phase2_lifetime", params, "security-association lifetime seconds 3600") is False
+    assert check_reflected("ipsec_phase2_lifetime", params, "no lifetime here") is False

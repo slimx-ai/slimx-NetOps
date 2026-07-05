@@ -60,14 +60,26 @@ def test_dry_run_plans_without_applying(monkeypatch):
     assert "3600" in after["content"][0]["json"]["data"]
 
 
-def test_apply_reflects_change_then_rollback_restores(monkeypatch):
+def test_apply_reflects_change_validates_then_rollback_restores(monkeypatch):
     _enable_writes(monkeypatch)
     env = _env(_call(dry_run=False))
     assert env["dry_run"] is False
     assert "28800" in env["after"]  # the change is now visible in the config read-back
+    assert env["validated"] is True  # the SPECIFIC intended value took
     # Roll back using the plan's rollback (restore 3600), then confirm.
     back = _env(_call(dry_run=False, profile="S2S-PROFILE", seconds=3600))
     assert "3600" in back["after"]
+    assert back["validated"] is True
+
+
+def test_apply_not_validated_when_device_does_not_reflect(monkeypatch):
+    # Simulate a device that ACCEPTS but does not reflect the change -> validation fails (this is
+    # what drives Mode-5 auto-rollback in ControlRoom).
+    monkeypatch.setenv("NETOPS_FIXTURE_SIMULATE_WRITES", "false")
+    _enable_writes(monkeypatch)
+    env = _env(_call(dry_run=False))
+    assert env["validated"] is False
+    assert "3600" in env["after"]  # unchanged — the intended 28800 did not take
 
 
 def test_unknown_change_type_is_error(monkeypatch):

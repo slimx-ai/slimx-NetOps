@@ -160,10 +160,20 @@ def _handle_apply_change(arguments: dict[str, Any], source: TelemetrySource) -> 
     try:
         applied = source.apply_config(device, plan.apply_commands)
         after = source.ssh_show(device, change_type.read_command).data
+        # Post-change validation: run the change's validate read-backs and confirm the SPECIFIC
+        # intended value took (richer than "state changed"). This drives Mode-5 auto-rollback.
+        reads: list[str] = []
+        for spec in plan.validate:
+            cmd = str(spec.get("command") or "")
+            if spec.get("tool") == "ssh_show" and cmd:
+                data = source.ssh_show(device, cmd).data
+                reads.append(data if isinstance(data, str) else str(data))
+        reads_text = "\n".join(reads) or (after if isinstance(after, str) else str(after))
     except ToolError as exc:
         return tools.error_result("apply_change", device.id, f"apply failed: {exc}")
     envelope["applied_output"] = applied.data if isinstance(applied.data, str) else str(applied.data)
     envelope["after"] = after if isinstance(after, str) else str(after)
+    envelope["validated"] = writelist.check_reflected(args.change_type, args.params, reads_text)
     return tools.ok_result(envelope)
 
 
