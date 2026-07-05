@@ -13,6 +13,7 @@ validated command/OID and an in-inventory target.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -35,6 +36,19 @@ class TelemetrySource(Protocol):
     def logs_query(
         self, endpoint: Endpoint, *, query: str, start: str | None, end: str | None, limit: int
     ) -> RawResult: ...
+    def apply_config(self, device: Device, commands: list[str]) -> RawResult: ...
+
+
+# Process-level simulated write state for FIXTURE mode: device id -> {setting: value}. Lets a
+# fixture-mode apply/rollback be reflected in subsequent config reads (so Mode 4/5 demos faithfully
+# show before -> after -> rollback), without touching the on-disk fixtures. Never used in live mode.
+_FIXTURE_WRITE_STATE: dict[str, dict[str, int]] = {}
+_LIFETIME_SET_RE = re.compile(
+    r"set\s+security-association\s+lifetime\s+seconds\s+(\d+)", re.IGNORECASE
+)
+_LIFETIME_CONFIG_RE = re.compile(
+    r"(security-association\s+lifetime\s+seconds\s+)(\d+)", re.IGNORECASE
+)
 
 
 # --- Fixture source ----------------------------------------------------------------------------
@@ -112,8 +126,15 @@ class FixtureSource:
             if all(n in lowered for n in needles):
                 slug = device.id.replace("-", "_")
                 name = template.format(device=slug) if per_device else template
+                text = self._read_text(name)
+                # Reflect any simulated write for this device (fixture-mode Mode 4/5 demo).
+                override = _FIXTURE_WRITE_STATE.get(device.id, {})
+                if "phase2_lifetime_seconds" in override:
+                    text = _LIFETIME_CONFIG_RE.sub(
+                        rf"\g<1>{override['phase2_lifetime_seconds']}", text
+                    )
                 return RawResult(
-                    data=self._read_text(name),
+                    data=text,
                     format="text",
                     signals=_SIGNALS.get(name, []),
                     command=command,
@@ -121,6 +142,21 @@ class FixtureSource:
         raise ToolError(
             f"no fixture matches command {command!r} for {device.id} "
             "(fixture mode ships the VPN/BGP-flap scenario only)"
+        )
+
+    def apply_config(self, device: Device, commands: list[str]) -> RawResult:
+        """Simulate applying config lines (fixture mode records a write-state override so subsequent
+        config reads reflect the change; nothing touches a real device)."""
+        for line in commands:
+            match = _LIFETIME_SET_RE.search(line)
+            if match:
+                _FIXTURE_WRITE_STATE.setdefault(device.id, {})[
+                    "phase2_lifetime_seconds"
+                ] = int(match.group(1))
+        return RawResult(
+            data=f"(simulated) applied {len(commands)} config line(s) on {device.id}",
+            format="text",
+            command="configure",
         )
 
     def snmp_get(self, device: Device, oids: list[str]) -> RawResult:

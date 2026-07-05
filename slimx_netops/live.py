@@ -56,6 +56,41 @@ class LiveSource:
         text, truncated = _cap_text(output, self._s.max_output_bytes)
         return RawResult(data=text, format="text", truncated=truncated, command=command)
 
+    def apply_config(self, device: Device, commands: list[str]) -> RawResult:
+        """Apply an allowlisted change's config lines via a netmiko config session, then save.
+
+        Only reached when NETOPS_ENABLE_WRITE=true and the change passed the writelist. The command
+        lines are built by the writelist (never raw model text), so this session is bounded to the
+        approved change. Reads back nothing here — the handler runs the change's validate collect.
+        """
+        try:
+            from netmiko import ConnectHandler  # type: ignore
+        except Exception as exc:  # pragma: no cover - live-only dependency
+            raise ToolError("live config requires the [live] extra (netmiko not installed)") from exc
+
+        params = {
+            "device_type": device.platform,
+            "host": device.host,
+            "port": device.port,
+            "username": resolve_secret(device.username),
+            "password": resolve_secret(device.password),
+            "secret": resolve_secret(device.secret) or "",
+            "conn_timeout": self._s.ssh_timeout_seconds,
+            "fast_cli": False,
+        }
+        if not params["username"] or not params["password"]:
+            raise ToolError(f"missing SSH credentials for {device.id} (check inventory env vars)")
+        try:
+            with ConnectHandler(**params) as conn:  # type: ignore[arg-type]
+                if params["secret"]:
+                    conn.enable()
+                output = conn.send_config_set(commands, read_timeout=self._s.ssh_timeout_seconds)
+                conn.save_config()
+        except Exception as exc:  # pragma: no cover - live-only path
+            raise ToolError(f"config apply failed on {device.id}: {type(exc).__name__}") from exc
+        text, truncated = _cap_text(output, self._s.max_output_bytes)
+        return RawResult(data=text, format="text", truncated=truncated, command="configure")
+
     # --- SNMP (pysnmp) -------------------------------------------------------------------------
 
     def snmp_get(self, device: Device, oids: list[str]) -> RawResult:

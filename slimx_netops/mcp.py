@@ -13,15 +13,16 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from slimx_netops import allowlist, inventory, tools
+from slimx_netops import allowlist, inventory, tools, writelist
 from slimx_netops.clients import TelemetrySource, get_source
+from slimx_netops.config import get_settings
 from slimx_netops.results import RawResult, ToolError
 
 logger = logging.getLogger("slimx_netops.mcp")
 
 
 def handle_tools_list() -> dict[str, Any]:
-    return {"tools": tools.TOOLS}
+    return {"tools": tools.tools_list(get_settings().enable_write)}
 
 
 def handle_tools_call(params: dict[str, Any], source: TelemetrySource | None = None) -> dict[str, Any]:
@@ -30,6 +31,8 @@ def handle_tools_call(params: dict[str, Any], source: TelemetrySource | None = N
     arguments = params.get("arguments") or {}
     if not isinstance(arguments, dict):
         return tools.error_result(str(name), None, "arguments must be an object")
+    if name in tools.WRITE_TOOL_NAMES:
+        return _handle_apply_change(arguments, source)
     if name not in tools.TOOL_NAMES:
         return tools.error_result(str(name), None, f"unknown tool: {name!r}")
 
@@ -103,6 +106,65 @@ def _dispatch(
         return raw, endpoint.id
 
     raise ToolError(f"no dispatch for tool {name!r}")  # unreachable (guarded by TOOL_NAMES)
+
+
+def _handle_apply_change(arguments: dict[str, Any], source: TelemetrySource) -> dict[str, Any]:
+    """The WRITE path: plan (dry-run) or apply ONE allowlisted, reversible change with rollback.
+
+    Gated four ways: NETOPS_ENABLE_WRITE on the bridge, the change_type on the writelist, param
+    validation, and (upstream in ControlRoom) the netops_write grant + hard-gate approval. Captures
+    before-state, builds apply + rollback commands, and — on a real apply — reads after-state.
+    """
+    settings = get_settings()
+    target = arguments.get("target") if isinstance(arguments.get("target"), str) else None
+    if not settings.enable_write:
+        return tools.error_result(
+            "apply_change", target,
+            "writes are disabled on this bridge (set NETOPS_ENABLE_WRITE=true to allow device changes)",
+        )
+    try:
+        args = tools.ApplyChangeInput(**arguments)
+        device = inventory.get_device(args.target)
+        change_type = writelist.validate_change_request(args.change_type, args.params)
+        before = source.ssh_show(device, change_type.read_command).data
+        before_text = before if isinstance(before, str) else str(before)
+        plan = writelist.plan_change(args.change_type, args.params, before_text)
+    except ValidationError as exc:
+        return tools.error_result("apply_change", target, _first_validation_message(exc))
+    except writelist.WriteNotAllowed as exc:
+        return tools.error_result("apply_change", target, exc.reason)
+    except inventory.UnknownTargetError:
+        return tools.error_result("apply_change", target, f"unknown target {args.target!r}")
+    except (inventory.InventoryError, ToolError) as exc:
+        return tools.error_result("apply_change", target, str(exc))
+
+    envelope: dict[str, Any] = {
+        "tool": "apply_change",
+        "target": device.id,
+        "change_type": plan.change_type,
+        "collected_at": tools._now_iso(),
+        "ok": True,
+        "dry_run": args.dry_run,
+        "risk": plan.risk,
+        "rollback_known": plan.rollback_known,
+        "apply_commands": plan.apply_commands,
+        "rollback_commands": plan.rollback_commands,
+        "rollback_request": plan.rollback_request,
+        "validate": plan.validate,
+        "before": before_text,
+        "after": None,
+    }
+    if args.dry_run:
+        return tools.ok_result(envelope)
+
+    try:
+        applied = source.apply_config(device, plan.apply_commands)
+        after = source.ssh_show(device, change_type.read_command).data
+    except ToolError as exc:
+        return tools.error_result("apply_change", device.id, f"apply failed: {exc}")
+    envelope["applied_output"] = applied.data if isinstance(applied.data, str) else str(applied.data)
+    envelope["after"] = after if isinstance(after, str) else str(after)
+    return tools.ok_result(envelope)
 
 
 def _first_validation_message(exc: ValidationError) -> str:

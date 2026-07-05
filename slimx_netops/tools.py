@@ -57,6 +57,16 @@ class LogsQueryInput(BaseModel):
     limit: int = 1000
 
 
+class ApplyChangeInput(BaseModel):
+    """A WRITE request (Stage 4/5). Runs only when NETOPS_ENABLE_WRITE=true and change_type is on the
+    writelist. ``dry_run`` (default True) plans without applying."""
+
+    target: str
+    change_type: str
+    params: dict[str, Any] = Field(default_factory=dict)
+    dry_run: bool = True
+
+
 # --- tools/list --------------------------------------------------------------------------------
 
 _TARGET = {"type": "string", "description": "An inventory target id (device or endpoint)."}
@@ -150,6 +160,35 @@ TOOLS: list[dict[str, Any]] = [
 ]
 
 TOOL_NAMES: frozenset[str] = frozenset(t["name"] for t in TOOLS)
+
+# Write tools (Stage 4/5) — advertised and callable ONLY when NETOPS_ENABLE_WRITE=true.
+WRITE_TOOLS: list[dict[str, Any]] = [
+    {
+        "name": "apply_change",
+        "description": (
+            "Apply ONE allowlisted, reversible device change (or dry-run it). Read-only unless the "
+            "bridge has NETOPS_ENABLE_WRITE=true. Always plan a rollback; prefer dry_run first."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "target": _TARGET,
+                "change_type": {"type": "string", "description": "An allowlisted change type id."},
+                "params": {"type": "object"},
+                "dry_run": {"type": "boolean", "default": True},
+            },
+            "required": ["target", "change_type"],
+            "additionalProperties": False,
+        },
+    },
+]
+
+WRITE_TOOL_NAMES: frozenset[str] = frozenset(t["name"] for t in WRITE_TOOLS)
+
+
+def tools_list(enable_write: bool) -> list[dict[str, Any]]:
+    """Advertised tools: reads always; the write tool only when the bridge enables writes."""
+    return TOOLS + (WRITE_TOOLS if enable_write else [])
 
 
 # --- Result envelope ---------------------------------------------------------------------------

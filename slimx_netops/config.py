@@ -32,6 +32,13 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None or not raw.strip():
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 @dataclass(frozen=True)
 class Settings:
     mode: str
@@ -43,6 +50,7 @@ class Settings:
     snmp_timeout_seconds: int
     http_timeout_seconds: int
     logs_max_lines: int
+    enable_write: bool
 
     @property
     def is_live(self) -> bool:
@@ -68,4 +76,8 @@ def get_settings() -> Settings:
         snmp_timeout_seconds=_env_int("NETOPS_SNMP_TIMEOUT_SECONDS", 10),
         http_timeout_seconds=_env_int("NETOPS_HTTP_TIMEOUT_SECONDS", 15),
         logs_max_lines=_env_int("NETOPS_LOGS_MAX_LINES", 5000),
+        # Write path (Stage 4/5) — OFF by default. When false, apply_change is never advertised
+        # and refuses to run: the bridge is read-only. Turn on ONLY on a box authorized to change
+        # devices, after the writelist security review.
+        enable_write=_env_bool("NETOPS_ENABLE_WRITE", False),
     )
