@@ -1,0 +1,36 @@
+{
+  "_source": {
+    "tool": "snmp_walk",
+    "target": "edge-fw-b",
+    "oid": "1.3.6.1.2.1.2.2.1 (ifTable, read-only)",
+    "collected_at": "2026-07-05T09:15:25Z",
+    "note": "Tunnel0-facing physical uplink. Minor input errors, NO hard fault — supports the weaker 'unstable ISP path' hypothesis but does not explain the hourly cadence."
+  },
+  "interfaces": [
+    {
+      "ifName": "GigabitEthernet0/0",
+      "ifDescr": "WAN uplink to ISP (tunnel transport)",
+      "ifAdminStatus": "up",
+      "ifOperStatus": "up",
+      "ifInOctets": 884213374412,
+      "ifOutOctets": 799120043221,
+      "ifInErrors": 421,
+      "ifOutErrors": 0,
+      "ifInDiscards": 88,
+      "ifOutDiscards": 0,
+      "input_error_rate_pct": 0.002,
+      "last_flap": null
+    },
+    {
+      "ifName": "Tunnel0",
+      "ifDescr": "S2S IPsec tunnel to edge-fw-a",
+      "ifAdminStatus": "up",
+      "ifOperStatus": "up",
+      "ifInErrors": 0,
+      "ifOutErrors": 0,
+      "resets_last_24h": 24,
+      "last_flap": "2026-07-05T09:14:03Z",
+      "note": "Tunnel0 flap timestamps align with Phase-2 rekeys, not with physical errors."
+    }
+  ]
+}

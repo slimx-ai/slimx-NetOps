@@ -1,0 +1,46 @@
+{
+  "_source": {
+    "tool": "alertmanager_alerts",
+    "target": "alertmanager.mon.internal",
+    "endpoint": "GET /api/v2/alerts (READ-ONLY)",
+    "collected_at": "2026-07-05T09:15:38Z"
+  },
+  "alerts": [
+    {
+      "fingerprint": "a1b2c3d4e5f60011",
+      "status": {"state": "active", "silencedBy": [], "inhibitedBy": []},
+      "labels": {
+        "alertname": "BGPNeighborDown",
+        "severity": "critical",
+        "device": "edge-fw-a",
+        "neighbor": "10.20.0.1",
+        "peer_as": "65020"
+      },
+      "annotations": {
+        "summary": "BGP neighbor 10.20.0.1 (edge-fw-b) flapping",
+        "description": "Neighbor reset 14 times in the last 12h; last reset hold-timer-expired."
+      },
+      "startsAt": "2026-07-05T05:14:24Z",
+      "updatedAt": "2026-07-05T09:14:22Z",
+      "generatorURL": "http://prometheus.mon.internal/graph?g0.expr=bgp_neighbor_up%3D%3D0"
+    },
+    {
+      "fingerprint": "f0e1d2c3b4a50022",
+      "status": {"state": "active", "silencedBy": [], "inhibitedBy": []},
+      "labels": {
+        "alertname": "VPNTunnelFlapping",
+        "severity": "warning",
+        "device": "edge-fw-b",
+        "peer": "edge-fw-a",
+        "tunnel": "Tunnel0"
+      },
+      "annotations": {
+        "summary": "Site-to-site VPN Tunnel0 flapping hourly",
+        "description": "vpn_tunnel_up dropped 1->0->1 at ~hourly cadence (07:14, 08:14, 09:14 UTC)."
+      },
+      "startsAt": "2026-07-05T05:14:20Z",
+      "updatedAt": "2026-07-05T09:14:03Z",
+      "generatorURL": "http://prometheus.mon.internal/graph?g0.expr=vpn_tunnel_up%3D%3D0"
+    }
+  ]
+}

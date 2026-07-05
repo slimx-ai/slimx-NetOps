@@ -1,0 +1,40 @@
+{
+  "_source": {
+    "tool": "prometheus_query",
+    "target": "prometheus.mon.internal",
+    "query": "vpn_tunnel_up{peer=\"edge-fw-a\",device=\"edge-fw-b\"}",
+    "type": "range",
+    "start": "2026-07-05T06:00:00Z",
+    "end": "2026-07-05T09:15:00Z",
+    "step": "60s",
+    "collected_at": "2026-07-05T09:15:35Z",
+    "note": "READ-ONLY /api/v1/query_range. Value drops 1->0->1 for ~1-2 min at each hourly rekey."
+  },
+  "status": "success",
+  "data": {
+    "resultType": "matrix",
+    "result": [
+      {
+        "metric": {
+          "__name__": "vpn_tunnel_up",
+          "device": "edge-fw-b",
+          "peer": "edge-fw-a",
+          "tunnel": "Tunnel0"
+        },
+        "values": [
+          [1751695200, "1"],
+          [1751698440, "1"],
+          [1751698441, "0"],
+          [1751698560, "1"],
+          [1751702040, "1"],
+          [1751702042, "0"],
+          [1751702160, "1"],
+          [1751705643, "1"],
+          [1751705644, "0"],
+          [1751705760, "1"],
+          [1751706900, "1"]
+        ]
+      }
+    ]
+  }
+}

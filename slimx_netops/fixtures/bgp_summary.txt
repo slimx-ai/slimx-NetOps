@@ -1,0 +1,17 @@
+! source: ssh_show  target: edge-fw-a  command: show ip bgp summary
+! collected_at: 2026-07-05T09:15:20Z   (READ-ONLY)
+!
+BGP router identifier 10.10.0.1, local AS number 65010
+BGP table version is 208431, main routing table version 208431
+412 network entries using 102176 bytes of memory
+518 path entries using 70448 bytes of memory
+
+Neighbor        V           AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
+10.20.0.1       4        65020  118422  118510   208431    0    0 00:00:58        406
+!
+! Up/Down 00:00:58 => neighbor 10.20.0.1 (edge-fw-b, over Tunnel0) came up <1 min ago.
+! Compare with reset history in bgp_neighbor_detail.txt: repeated short uptimes, hourly resets.
+!
+! show ip bgp neighbors 10.20.0.1 | include reset|Uptime|flap
+!   Last reset 00:00:58 ago, due to BGP Notification received (hold time expired)
+!   Connection resets since session start: 14

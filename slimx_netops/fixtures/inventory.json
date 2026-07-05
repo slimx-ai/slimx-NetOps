@@ -1,0 +1,35 @@
+{
+  "_doc": "Default inventory for FIXTURE MODE — the 'BGP resets after VPN flap' scenario. In live mode, point NETOPS_INVENTORY at a real inventory whose credential fields use ${ENV_VAR} placeholders. Only targets listed here are reachable (the egress boundary).",
+  "devices": {
+    "edge-fw-a": {
+      "host": "203.0.113.10",
+      "platform": "cisco_ios",
+      "port": 22,
+      "username": "${NETOPS_EDGE_FW_A_USER}",
+      "password": "${NETOPS_EDGE_FW_A_PASS}",
+      "secret": "${NETOPS_EDGE_FW_A_COMMUNITY}"
+    },
+    "edge-fw-b": {
+      "host": "198.51.100.20",
+      "platform": "cisco_ios",
+      "port": 22,
+      "username": "${NETOPS_EDGE_FW_B_USER}",
+      "password": "${NETOPS_EDGE_FW_B_PASS}",
+      "secret": "${NETOPS_EDGE_FW_B_COMMUNITY}"
+    }
+  },
+  "endpoints": {
+    "prometheus.mon.internal": {
+      "kind": "prometheus",
+      "base_url": "http://prometheus.mon.internal:9090"
+    },
+    "alertmanager.mon.internal": {
+      "kind": "alertmanager",
+      "base_url": "http://alertmanager.mon.internal:9093"
+    },
+    "loki.mon.internal": {
+      "kind": "loki",
+      "base_url": "http://loki.mon.internal:3100"
+    }
+  }
+}

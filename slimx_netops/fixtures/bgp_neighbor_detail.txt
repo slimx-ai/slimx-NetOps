@@ -1,0 +1,27 @@
+! source: ssh_show  target: edge-fw-a  command: show ip bgp neighbors 10.20.0.1
+! collected_at: 2026-07-05T09:15:22Z   (READ-ONLY)
+!
+BGP neighbor is 10.20.0.1,  remote AS 65020, external link
+  BGP version 4, remote router ID 10.20.0.1
+  BGP state = Established, up for 00:00:58
+  Last read 00:00:03, last write 00:00:03, hold time is 180, keepalive interval is 60 seconds
+  Neighbor sessions: 1 active, is not multisession capable
+  Connection is ECN Disabled, Minimum incoming TTL 0, Outgoing TTL 1
+  Local host: 10.10.0.1, Local port: 179
+  Foreign host: 10.20.0.1, Foreign port: 51844
+
+  Last reset 00:00:58 ago, due to BGP Notification received (hold time expired)
+  Connection resets since session start: 14
+
+  Recent reset history (most recent first):
+    2026-07-05 09:14:22 UTC  reset: hold time expired         (tunnel rekey at 09:14:03, +19s)
+    2026-07-05 08:14:25 UTC  reset: hold time expired         (tunnel rekey at 08:14:02, +23s)
+    2026-07-05 07:14:20 UTC  reset: peer closed the session   (tunnel rekey at 07:14:01, +19s)
+    2026-07-05 06:14:18 UTC  reset: hold time expired
+    2026-07-05 05:14:24 UTC  reset: hold time expired
+
+  Datagrams received out of order: 37
+  Connection state is ESTAB, I/O status: 1, unread input bytes: 0
+!
+! KEY SIGNAL: every reset lands 19-23s AFTER a Phase-2 rekey (see ike_rekey_logs.txt).
+! Reset cadence == rekey cadence (~3600s). Hold time 180s; loss burst during SA rebuild trips it.

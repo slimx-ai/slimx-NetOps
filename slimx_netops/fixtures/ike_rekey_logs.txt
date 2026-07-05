@@ -1,0 +1,16 @@
+! source: ssh_show  target: edge-fw-b  command: show logging | include IKE|IPSEC|CRYPTO
+! collected_at: 2026-07-05T09:15:10Z   (READ-ONLY buffer dump, redacted)
+!
+Jul  5 07:14:01.221 UTC: %CRYPTO-5-IKMP_SA_NOT_OFFERED: Remote peer 203.0.113.10 configured lifetime 28800s, local 3600s; using lower (3600s)
+Jul  5 07:14:01.482 UTC: %CRYPTO-6-ISAKMP_ON_OFF: ISAKMP is ON
+Jul  5 07:14:01.902 UTC: %IPSEC-5-SA_REKEY: Phase-2 SA rekey started, conn-id 4211, tunnel to 203.0.113.10 (edge-fw-a)
+Jul  5 07:14:02.560 UTC: %IPSEC-5-SA_ESTABLISHED: Phase-2 SA established, lifetime 3600s, conn-id 4212
+Jul  5 08:14:02.113 UTC: %IPSEC-5-SA_EXPIRING: Phase-2 SA conn-id 4212 expiring (lifetime 3600s reached)
+Jul  5 08:14:02.339 UTC: %IPSEC-5-SA_REKEY: Phase-2 SA rekey started, conn-id 4231, tunnel to 203.0.113.10 (edge-fw-a)
+Jul  5 08:14:03.001 UTC: %IPSEC-5-SA_ESTABLISHED: Phase-2 SA established, lifetime 3600s, conn-id 4232
+Jul  5 09:14:03.220 UTC: %IPSEC-5-SA_EXPIRING: Phase-2 SA conn-id 4232 expiring (lifetime 3600s reached)
+Jul  5 09:14:03.498 UTC: %IPSEC-5-SA_REKEY: Phase-2 SA rekey started, conn-id 4251, tunnel to 203.0.113.10 (edge-fw-a)
+Jul  5 09:14:04.140 UTC: %IPSEC-5-SA_ESTABLISHED: Phase-2 SA established, lifetime 3600s, conn-id 4252
+!
+! NOTE: rekey interval is ~3600s (07:14, 08:14, 09:14). Local Phase-2 lifetime = 3600s.
+! Peer 203.0.113.10 (edge-fw-a) advertised 28800s; the shorter local lifetime drives renegotiation.

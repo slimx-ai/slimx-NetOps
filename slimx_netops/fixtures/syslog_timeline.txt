@@ -1,0 +1,22 @@
+# source: logs_query  target: loki.mon.internal
+# query: {job="netsyslog", host=~"edge-fw-a|edge-fw-b"} |~ "IPSEC|BGP|Tunnel"
+# start: 2026-07-05T09:13:50Z  end: 2026-07-05T09:15:00Z  (READ-ONLY, most recent hourly event)
+# collected_at: 2026-07-05T09:15:40Z
+#
+2026-07-05T09:14:02.113Z edge-fw-b IPSEC: Phase-2 SA conn-id 4232 expiring (lifetime 3600s reached)
+2026-07-05T09:14:03.220Z edge-fw-b IPSEC: Phase-2 SA rekey started, tunnel to 203.0.113.10
+2026-07-05T09:14:03.470Z edge-fw-b TUNNEL: Tunnel0 line protocol down (SA rebuild)
+2026-07-05T09:14:03.900Z edge-fw-a TUNNEL: Tunnel0 line protocol down (peer SA rebuild)
+2026-07-05T09:14:04.140Z edge-fw-b IPSEC: Phase-2 SA established, lifetime 3600s, conn-id 4252
+2026-07-05T09:14:04.520Z edge-fw-b TUNNEL: Tunnel0 line protocol up
+2026-07-05T09:14:05.010Z edge-fw-a TUNNEL: Tunnel0 line protocol up
+2026-07-05T09:14:22.330Z edge-fw-a BGP: %BGP-5-NBR_RESET: Neighbor 10.20.0.1 reset (hold time expired)
+2026-07-05T09:14:22.335Z edge-fw-a BGP: %BGP-5-ADJCHANGE: neighbor 10.20.0.1 Down - hold time expired
+2026-07-05T09:14:22.900Z edge-fw-a BGP: %BGP-3-NOTIFICATION: sent to neighbor 10.20.0.1 4/0 (hold time expired)
+2026-07-05T09:14:23.400Z edge-fw-a ROUTING: withdrawing 406 prefixes learned via 10.20.0.1
+2026-07-05T09:15:20.110Z edge-fw-a BGP: %BGP-5-ADJCHANGE: neighbor 10.20.0.1 Up
+2026-07-05T09:15:20.980Z edge-fw-a ROUTING: re-installing 406 prefixes via 10.20.0.1
+#
+# TIMELINE: SA expiry (09:14:02) -> rekey/tunnel down (09:14:03) -> tunnel up (09:14:04)
+#           -> BGP hold-timer expiry/reset (09:14:22, +19s) -> BGP up (09:15:20).
+# Same shape repeats every ~3600s. The tunnel micro-outage during SA rebuild is what trips BGP.
