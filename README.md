@@ -103,3 +103,7 @@ connector's `allowedTools`. The agent reaches them via the hard-gated `mcp_call`
 pip install -e '.[dev]'
 ruff check . && pytest -q
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
